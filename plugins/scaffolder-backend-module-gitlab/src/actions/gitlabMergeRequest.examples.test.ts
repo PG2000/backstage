@@ -49,6 +49,7 @@ const mockGitlabClient = {
         default_branch: 'main',
       };
     }),
+    merge: jest.fn(async () => ({})),
   },
   MergeRequestApprovals: {
     allApprovalRules: jest.fn(async (_: any) => {
@@ -349,6 +350,40 @@ describe('createGitLabMergeRequest', () => {
             execute_filemode: false,
           },
         ],
+      );
+    });
+  });
+
+  describe('createGitLabMergeRequestWithAutoMerge', () => {
+    it(`Should ${examples[6].description}`, async () => {
+      const input = yaml.parse(examples[6].example).steps[0].input;
+      mockDir.setContent({
+        [workspacePath]: {
+          source: { 'foo.txt': 'Hello there!' },
+          irrelevant: { 'bar.txt': 'Nothing to see here' },
+        },
+      });
+
+      const ctx = createMockActionContext({ input, workspacePath });
+      await instance.handler(ctx);
+
+      expect(mockGitlabClient.MergeRequests.create).toHaveBeenCalledWith(
+        'owner/repo',
+        'new-mr',
+        'main',
+        'Create my new MR',
+        {
+          description: 'MR description',
+          removeSourceBranch: false,
+          assigneeId: undefined,
+          reviewerIds: undefined,
+          labels: undefined,
+        },
+      );
+      expect(mockGitlabClient.MergeRequests.merge).toHaveBeenCalledWith(
+        'owner/repo',
+        undefined,
+        { autoMerge: true },
       );
     });
   });
