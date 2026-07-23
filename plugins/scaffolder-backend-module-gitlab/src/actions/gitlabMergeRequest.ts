@@ -475,7 +475,7 @@ _deprecated_: \`projectid\` passed as query parameters in the \`repoUrl\``,
           return { mrWebUrl };
         },
       });
-
+      if (autoMerge) {
         await ctx.checkpoint({
           key: `auto.merge.mr.${repoID}.${branchName}`,
           fn: async () => {
