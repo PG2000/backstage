@@ -185,6 +185,13 @@ _deprecated_: \`projectid\` passed as query parameters in the \`repoUrl\``,
             .or(z.string().array())
             .optional()
             .describe('Labels with which to tag the created merge request'),
+        autoMerge: z =>
+          z
+            .boolean()
+            .optional()
+            .describe(
+              'Automatically merge the MR when the pipeline succeeds. Uses GitLab auto-merge. Default: `false`',
+            ),
       },
       output: {
         targetBranchName: z =>
@@ -209,6 +216,7 @@ _deprecated_: \`projectid\` passed as query parameters in the \`repoUrl\``,
         title,
         token,
         labels,
+        autoMerge,
       } = ctx.input;
 
       const { owner, repo, project } = parseRepoUrl(repoUrl, integrations);
@@ -467,6 +475,18 @@ _deprecated_: \`projectid\` passed as query parameters in the \`repoUrl\``,
           return { mrWebUrl };
         },
       });
+
+      if (autoMerge) {
+        await ctx.checkpoint({
+          key: `auto.merge.mr.${repoID}.${branchName}`,
+          fn: async () => {
+            await api.MergeRequests.merge(repoID, mrId, {
+              autoMerge: true,
+            });
+            return null;
+          },
+        });
+      }
 
       ctx.output('projectid', repoID);
       ctx.output('targetBranchName', targetBranch);
