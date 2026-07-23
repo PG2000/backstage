@@ -476,14 +476,21 @@ _deprecated_: \`projectid\` passed as query parameters in the \`repoUrl\``,
         },
       });
 
-      if (autoMerge) {
         await ctx.checkpoint({
           key: `auto.merge.mr.${repoID}.${branchName}`,
           fn: async () => {
-            await api.MergeRequests.merge(repoID, mrId, {
-              autoMerge: true,
-            });
-            return null;
+            try {
+              await api.MergeRequests.merge(repoID, mrId, {
+                autoMerge: true,
+              });
+              return null;
+            } catch (e) {
+              throw new InputError(
+                `Enabling auto-merge for merge request ${mrId} failed. ${getErrorMessage(
+                  e,
+                )}`,
+              );
+            }
           },
         });
       }
